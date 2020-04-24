@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "VxwDYb0KqcQQ6n23Frm8ejFzqWk6FopONELnZsCauQ4fsakLe30sSl4vFqR9usoAhfGvvSM+O0+DjjBhm85ldQ==",
+  "success": true,
+  "projectFilePath": "/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/PacketSniffer.csproj",
+  "expectedPackageFiles": [
+    "/home/bixor/.nuget/packages/packetdotnet/1.0.3/packetdotnet.1.0.3.nupkg.sha512",
+    "/home/bixor/.nuget/packages/sharppcap/5.1.0/sharppcap.5.1.0.nupkg.sha512",
+    "/home/bixor/.nuget/packages/system.runtime.compilerservices.unsafe/4.6.0/system.runtime.compilerservices.unsafe.4.6.0.nupkg.sha512"
+  ],
+  "logs": []
+}

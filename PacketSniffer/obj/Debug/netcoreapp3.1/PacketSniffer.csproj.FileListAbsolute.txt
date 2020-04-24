@@ -1,0 +1,16 @@
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketSniffer
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketSniffer.deps.json
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketSniffer.runtimeconfig.json
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketSniffer.runtimeconfig.dev.json
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketSniffer.dll
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketSniffer.pdb
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.csprojAssemblyReference.cache
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.csproj.CoreCompileInputs.cache
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.AssemblyInfoInputs.cache
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.AssemblyInfo.cs
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.dll
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.pdb
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.genruntimeconfig.cache
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/PacketDotNet.dll
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/bin/Debug/netcoreapp3.1/SharpPcap.dll
+/home/bixor/SchoolProjects/IPK2/PacketSniffer/PacketSniffer/obj/Debug/netcoreapp3.1/PacketSniffer.csproj.CopyComplete
