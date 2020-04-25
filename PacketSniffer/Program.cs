@@ -7,6 +7,11 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks.Dataflow;
 using SharpPcap;
 
 namespace PacketSniffer
@@ -104,11 +109,9 @@ namespace PacketSniffer
         {
             bool isThere = false;
             ICaptureDevice deviceToReturn = devices[0];
-            foreach (var dev in devices)
-            {
+            foreach (var dev in devices) {
                 
-                if (dev.Name == deviceName)
-                {
+                if (dev.Name == deviceName) {
                     isThere = true;
                     deviceToReturn = dev;
                     break;
@@ -143,6 +146,11 @@ namespace PacketSniffer
             Foo.device.Capture();
         }
 
+        /**
+         * Function for applying filter(s) which were given as command line arguments
+         * If there is -udp and -tcp filter at the same time (or both are not given)
+         * it will apply filter for search for both of those packet types
+         */
         string createFilter()
         {
             string filter = "";
@@ -171,13 +179,17 @@ namespace PacketSniffer
             return filter;
         }
         
+        /**
+         * Function which Extract Packet
+         * take info (about source and destination -> ports, address(which is converted to DN))
+         * and at the end of function, there is print function for print sniffed packet
+         */
         void device_OnPacketArrival(object sender, CaptureEventArgs e)
         {
             var time = e.Packet.Timeval.Date;
             var len = e.Packet.Data.Length;
 
             var packet = PacketDotNet.Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
-
             var tcpPacket = packet.Extract<PacketDotNet.TcpPacket>();
             var udpPacket = packet.Extract<PacketDotNet.UdpPacket>();
 
@@ -190,31 +202,106 @@ namespace PacketSniffer
             
             if (udpPacket != null)
             {
-                var ipPacket = (PacketDotNet.IPPacket)udpPacket.ParentPacket;
-                System.Net.IPAddress srcIp = ipPacket.SourceAddress;
-                System.Net.IPAddress dstIp = ipPacket.DestinationAddress;
-                int srcPort = udpPacket.SourcePort;
-                int dstPort = udpPacket.DestinationPort;
+                var Packet = (PacketDotNet.IPPacket)udpPacket.ParentPacket;
+                var src = Packet.SourceAddress;
+                var dst = Packet.DestinationAddress;
+                var srcPort = udpPacket.SourcePort;
+                var dstPort = udpPacket.DestinationPort;
                 
-                Console.WriteLine("{0}:{1}:{2}.{3} Len={4} {5}:{6} -> {7}:{8}\n",
-                    time.Hour, time.Minute, time.Second, time.Millisecond, len,
-                    srcIp, srcPort, dstIp, dstPort);
-                Console.WriteLine(udpPacket.PrintHex());
+                string hostnameSrc = findHostName(src.ToString());;
+                string hostnameDst = findHostName(dst.ToString());;
+
+                Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
+                    time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
+                
+                var filteredData = TakeNeccesaryDatas(tcpPacket.PrintHex());
+                filterDataAndPrintIt(filteredData);
             }
             
             if (tcpPacket != null)
             {
-                var ipPacket = (PacketDotNet.IPPacket)tcpPacket.ParentPacket;
-                System.Net.IPAddress srcIp = ipPacket.SourceAddress;
-                System.Net.IPAddress dstIp = ipPacket.DestinationAddress;
-                int srcPort = tcpPacket.SourcePort;
-                int dstPort = tcpPacket.DestinationPort;
+                var Packet = (PacketDotNet.IPPacket)tcpPacket.ParentPacket;
+                var src = Packet.SourceAddress;
+                var dst = Packet.DestinationAddress;
+                var srcPort = tcpPacket.SourcePort;
+                var dstPort = tcpPacket.DestinationPort;
                 
-                Console.WriteLine("{0}:{1}:{2}.{3} Len={4} {5}:{6} -> {7}:{8}\n",
-                    time.Hour, time.Minute, time.Second, time.Millisecond, len,
-                    srcIp, srcPort, dstIp, dstPort);
-                Console.WriteLine(tcpPacket.PrintHex());
+                string hostnameSrc = findHostName(src.ToString());;
+                string hostnameDst = findHostName(dst.ToString());;
+
+                Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
+                    time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
+                
+                var filteredData = TakeNeccesaryDatas(tcpPacket.PrintHex());
+                filterDataAndPrintIt(filteredData);
             }
+        }
+
+        public string findHostName(string src)
+        {
+            string hostname = "";
+            IPAddress url = IPAddress.Parse(src);
+            
+            try {
+                IPHostEntry iphe = Dns.GetHostEntry(url);
+                hostname = iphe.HostName;
+            }
+            catch (Exception)
+            {
+                hostname = src;
+            }
+
+            return hostname;
+        }
+
+        public void filterDataAndPrintIt(string filteredData)
+        {
+            filteredData = filteredData.Replace("Data: ", "");
+                
+            var regex = new Regex(@"\d{4}");
+            var converted = regex.Matches(filteredData).ToArray();
+
+            for (int i = 0; i < converted.Length; i++) {
+                int Place = filteredData.IndexOf(converted[i].ToString());
+                filteredData = filteredData.Remove(Place, converted[i].Length).Insert(Place, String.Format("0x{0:X}", converted[i]));
+            }
+
+            int headerSpace = 0;
+            for (int i = 0; i < filteredData.Length; i++) {
+                if (filteredData[i] == '\n') {
+                    headerSpace++;
+                }
+                if (headerSpace == 3) {
+                    filteredData = filteredData.Insert(i, "\n");
+                    break;
+                }
+            }
+                
+            Console.WriteLine(filteredData);
+        }
+        
+        /**
+        * This function takes only necessary datas from Packet (ignore headers with infos)
+        * and fill the final string
+        */
+        public string TakeNeccesaryDatas (string edit)
+        {
+            int skipHeader = 0;
+            string final = "";
+                
+            
+            for (int i = 0; i < edit.Length; i++) {
+                if (edit[i] == '\n') {
+                    skipHeader++;
+                }
+                if (skipHeader >= 3) {
+                    //take only substring with datas (+1 because one redundant newline will be there)
+                    final = edit.Substring(i+1);
+                    break;
+                }
+            }
+            
+            return final;
         }
     }
 }
