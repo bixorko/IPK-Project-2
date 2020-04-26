@@ -10,8 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
+using PacketDotNet.Utils;
 using SharpPcap;
 
 namespace PacketSniffer
@@ -203,6 +205,7 @@ namespace PacketSniffer
             if (udpPacket != null)
             {
                 var Packet = (PacketDotNet.IPPacket)udpPacket.ParentPacket;
+                
                 var src = Packet.SourceAddress;
                 var dst = Packet.DestinationAddress;
                 var srcPort = udpPacket.SourcePort;
@@ -213,28 +216,82 @@ namespace PacketSniffer
 
                 Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
                     time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
-                
+
                 var filteredData = TakeNeccesaryDatas(udpPacket.PrintHex());
-                filterDataAndPrintIt(filteredData);
+                filteredData = filterDataAndPrintIt(filteredData);
+                Console.WriteLine(filteredData);
             }
             
             if (tcpPacket != null)
             {
                 var Packet = (PacketDotNet.IPPacket)tcpPacket.ParentPacket;
+                
                 var src = Packet.SourceAddress;
                 var dst = Packet.DestinationAddress;
                 var srcPort = tcpPacket.SourcePort;
                 var dstPort = tcpPacket.DestinationPort;
-                
-                string hostnameSrc = findHostName(src.ToString());;
-                string hostnameDst = findHostName(dst.ToString());;
+
+                string hostnameSrc = findHostName(src.ToString());
+                string hostnameDst = findHostName(dst.ToString());
 
                 Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
                     time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
-                
                 var filteredData = TakeNeccesaryDatas(tcpPacket.PrintHex());
-                filterDataAndPrintIt(filteredData);
+                filteredData = filterDataAndPrintIt(filteredData);
+                Console.WriteLine(filteredData);
+                Console.WriteLine();
+                
+                /**
+                 * THIS PART OF CODE, SEPARATE HEADERS AND
+                 * OPTIONS IN PACKET
+                 */
+                int length = len - tcpPacket.PayloadData.Length;
+
+                string[] tcpfile = fillSeparatedParts(0, length, tcpPacket.BytesSegment);
+                foreach (var item in tcpfile) {
+                    Console.Write(item);
+                }
+
+                if (tcpPacket.PayloadData.Length > 0) {
+                    string[] tcpfile2 = fillSeparatedParts(length, len, tcpPacket.PayloadDataSegment);
+                    if (tcpfile2.Length > 0) {         
+                        foreach (var item in tcpfile2) {
+                            Console.Write(item);
+                        }                                      
+                    }                                  
+                }
             }
+        }
+
+        public string[] fillSeparatedParts(int start, int stop, ByteArraySegment payloadDataSegment)
+        {
+
+            string temp = "";
+            List<string> tcpfile = new List<string>();
+            int counter1 = 0;
+            int counter2 = 0;
+            for (int j = start; j < stop; j++) {
+                temp += payloadDataSegment.Bytes[j].ToString("x2");
+                temp += " ";
+                counter1++;
+                counter2++;
+                if (counter1 % 8 == 0) {
+                    temp += " ";
+                }
+
+                if (counter2 % 16 == 0) {
+                    temp += "\n";
+                    tcpfile.Add(temp);
+                    temp = "";
+                }
+            }
+
+            if (temp.Length != 0) {
+                temp += "\n";
+                tcpfile.Add(temp);
+            }
+
+            return tcpfile.ToArray();
         }
 
         public string findHostName(string src)
@@ -254,7 +311,7 @@ namespace PacketSniffer
             return hostname;
         }
 
-        public void filterDataAndPrintIt(string filteredData)
+        public string filterDataAndPrintIt(string filteredData)
         {
             filteredData = filteredData.Replace("Data: ", "");
                 
@@ -263,21 +320,10 @@ namespace PacketSniffer
 
             for (int i = 0; i < converted.Length; i++) {
                 int Place = filteredData.IndexOf(converted[i].ToString());
-                filteredData = filteredData.Remove(Place, converted[i].Length).Insert(Place, String.Format("0x{0:X}", converted[i]));
+                filteredData = filteredData.Remove(Place, converted[i].Length).Insert(Place, String.Format("0x{0:X}:", converted[i]));
             }
 
-            int headerSpace = 0;
-            for (int i = 0; i < filteredData.Length; i++) {
-                if (filteredData[i] == '\n') {
-                    headerSpace++;
-                }
-                if (headerSpace == 3) {
-                    filteredData = filteredData.Insert(i, "\n");
-                    break;
-                }
-            }
-                
-            Console.WriteLine(filteredData);
+            return filteredData;
         }
         
         /**
