@@ -33,6 +33,11 @@ namespace PacketSniffer
         private int countPackets = 0;
         private ICaptureDevice device;
         
+        private int firstNum = 0;
+        private int secondNum = 0;
+        private int thirdNum = 0;
+        private int fourthNum = 0;
+        
         void parseArguments(string[] args) {
             bool nextIsNumber = false; 
             bool nextIsPort = false; 
@@ -216,10 +221,31 @@ namespace PacketSniffer
 
                 Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
                     time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
+                
+                int length = len - udpPacket.PayloadData.Length;
+                
+                firstNum = 0;
+                secondNum = 0;
+                thirdNum = 0;
+                fourthNum = 0;
 
-                var filteredData = TakeNeccesaryDatas(udpPacket.PrintHex());
-                filteredData = filterDataAndPrintIt(filteredData);
-                Console.WriteLine(filteredData);
+                /**
+                 * THIS PART OF CODE, SEPARATE HEADERS AND
+                 * OPTIONS IN PACKET AND PRINT PRINTABLE ASCII CHARACTERS
+                 * IF IS NONPRINTABLE CHAR THERE, IT WILL PRINT AS DOT
+                 */
+                string[] udpfile = fillSeparatedParts(0, length, udpPacket.BytesSegment);
+                createAsciiChars(udpfile);
+                Console.WriteLine();
+
+                if (udpPacket.PayloadData.Length > 0) {
+                    string[] udpfile2 = fillSeparatedParts(length, len, udpPacket.PayloadDataSegment);
+                    if (udpfile2.Length > 0) {
+                        createAsciiChars(udpfile2);
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
             }
             
             if (tcpPacket != null)
@@ -236,29 +262,92 @@ namespace PacketSniffer
 
                 Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
                     time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
-                var filteredData = TakeNeccesaryDatas(tcpPacket.PrintHex());
-                filteredData = filterDataAndPrintIt(filteredData);
-                Console.WriteLine(filteredData);
-                Console.WriteLine();
-                
+
                 /**
                  * THIS PART OF CODE, SEPARATE HEADERS AND
-                 * OPTIONS IN PACKET
+                 * OPTIONS IN PACKET AND PRINT PRINTABLE ASCII CHARACTERS
+                 * IF IS NONPRINTABLE CHAR THERE, IT WILL PRINT AS DOT
                  */
                 int length = len - tcpPacket.PayloadData.Length;
-
+                
+                firstNum = 0;
+                secondNum = 0;
+                thirdNum = 0;
+                fourthNum = 0;
+                
                 string[] tcpfile = fillSeparatedParts(0, length, tcpPacket.BytesSegment);
-                foreach (var item in tcpfile) {
-                    Console.Write(item);
-                }
+                createAsciiChars(tcpfile);
+                Console.WriteLine();
 
                 if (tcpPacket.PayloadData.Length > 0) {
                     string[] tcpfile2 = fillSeparatedParts(length, len, tcpPacket.PayloadDataSegment);
-                    if (tcpfile2.Length > 0) {         
-                        foreach (var item in tcpfile2) {
-                            Console.Write(item);
-                        }                                      
-                    }                                  
+                    if (tcpfile2.Length > 0) {
+                        createAsciiChars(tcpfile2);
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public void createAsciiChars(string[] tcpfile)
+        {
+            foreach (var item in tcpfile) {
+                string hexValue1 = firstNum.ToString("x");
+                string hexValue2 = secondNum.ToString("x");
+                string hexValue3 = thirdNum.ToString("x");
+                string hexValue4 = fourthNum.ToString("x");
+                Console.Write("0x{0}{1}{2}{3}:  ", hexValue1, hexValue2, hexValue3, hexValue4);
+                Console.Write(item.Substring(0, item.Length-1));
+
+                int counter1 = 0;
+                int counter2 = 0;
+                var testarr = item.Split(" ");
+                bool firstTim = true;
+                for (int j = 0; j < testarr.Length; j++) {
+                    if (!string.IsNullOrWhiteSpace(testarr[j])) {
+                        if (item.Length-1 != 50 && firstTim) {
+                            int countSymbols = 0;
+                            for (int i = 0; i < item.Length; i++) {
+                                if (!char.IsWhiteSpace(item[i])) {
+                                    countSymbols += 1;
+                                }
+                            }
+                            fourthNum = countSymbols / 2;
+                            for (int k = 0; k <= 50-item.Length; k++) {
+                                Console.Write(" ");
+                            }
+
+                            thirdNum--;
+                            firstTim = false;
+                        }
+                        int decValue = Convert.ToInt32(testarr[j], 16);
+                        counter1++;
+                        counter2++;
+                        if (decValue > 32 && decValue < 127) {
+                            Console.Write((char)decValue);
+                        }
+                        else {
+                            Console.Write(".");
+                        }
+
+                        if (counter1 % 8 == 0) {
+                            Console.Write(" ");
+                        }
+                        if (counter2 % 16 == 0){
+                            Console.Write("\n");
+                        }
+                    }
+                }
+                thirdNum++;
+                if (thirdNum == 16) {
+                    secondNum++;
+                    thirdNum = 0;
+                }
+                if (secondNum == 16) {
+                    firstNum++;
+                    secondNum = 0;
+                    thirdNum = 0;
                 }
             }
         }
@@ -290,7 +379,7 @@ namespace PacketSniffer
                 temp += "\n";
                 tcpfile.Add(temp);
             }
-
+            
             return tcpfile.ToArray();
         }
 
@@ -309,45 +398,6 @@ namespace PacketSniffer
             }
 
             return hostname;
-        }
-
-        public string filterDataAndPrintIt(string filteredData)
-        {
-            filteredData = filteredData.Replace("Data: ", "");
-                
-            var regex = new Regex(@"\d{4}");
-            var converted = regex.Matches(filteredData).ToArray();
-
-            for (int i = 0; i < converted.Length; i++) {
-                int Place = filteredData.IndexOf(converted[i].ToString());
-                filteredData = filteredData.Remove(Place, converted[i].Length).Insert(Place, String.Format("0x{0:X}:", converted[i]));
-            }
-
-            return filteredData;
-        }
-        
-        /**
-        * This function takes only necessary datas from Packet (ignore headers with infos)
-        * and fill the final string
-        */
-        public string TakeNeccesaryDatas (string edit)
-        {
-            int skipHeader = 0;
-            string final = "";
-                
-            
-            for (int i = 0; i < edit.Length; i++) {
-                if (edit[i] == '\n') {
-                    skipHeader++;
-                }
-                if (skipHeader >= 3) {
-                    //take only substring with datas (+1 because one redundant newline will be there)
-                    final = edit.Substring(i+1);
-                    break;
-                }
-            }
-            
-            return final;
         }
     }
 }
