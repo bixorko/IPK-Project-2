@@ -207,6 +207,13 @@ namespace PacketSniffer
                 Environment.Exit(0);
             }
             
+            /**
+             * We detected that we got udp packet, so it execute this part of code
+             * which take source and destination address / port
+             * also take hostName (if exists) from function findHostName
+             * and print it as a info of packet
+             */
+            
             if (udpPacket != null)
             {
                 var Packet = (PacketDotNet.IPPacket)udpPacket.ParentPacket;
@@ -222,7 +229,7 @@ namespace PacketSniffer
                 Console.WriteLine("{0}:{1}:{2}.{3} {4} : {5} > {6} : {7}\n",
                     time.Hour, time.Minute, time.Second, time.Millisecond, hostnameSrc, srcPort, hostnameDst, dstPort);
                 
-                int length = len - udpPacket.PayloadData.Length;
+                int length = len - udpPacket.PayloadData.Length; //calculate length of header data
                 
                 firstNum = 0;
                 secondNum = 0;
@@ -248,6 +255,13 @@ namespace PacketSniffer
                 Console.WriteLine();
             }
             
+            /**
+             * We detected that we got tcp packet, so it execute this part of code
+             * which take source and destination address / port
+             * also take hostName (if exists) from function findHostName
+             * and print it as a info of packet
+             */
+            
             if (tcpPacket != null)
             {
                 var Packet = (PacketDotNet.IPPacket)tcpPacket.ParentPacket;
@@ -268,7 +282,7 @@ namespace PacketSniffer
                  * OPTIONS IN PACKET AND PRINT PRINTABLE ASCII CHARACTERS
                  * IF IS NONPRINTABLE CHAR THERE, IT WILL PRINT AS DOT
                  */
-                int length = len - tcpPacket.PayloadData.Length;
+                int length = len - tcpPacket.PayloadData.Length; //calculate length of header data
                 
                 firstNum = 0;
                 secondNum = 0;
@@ -290,6 +304,11 @@ namespace PacketSniffer
             }
         }
 
+        /**
+         * >Because builded function .HexPrint() from library SharpPcap didn't print tcpdumb hex in format
+         * that we have to print it, i have to create function, which creates ASCII characters based on hexadecimals characters
+         * taken by PayloadDataSegment (and also header part).
+         */
         public void createAsciiChars(string[] tcpfile)
         {
             foreach (var item in tcpfile) {
@@ -352,9 +371,12 @@ namespace PacketSniffer
             }
         }
 
+        /**
+         * This Function takes bytes written as hexadecimals and separate them into format
+         * a1 b1 c1 d1 e1 f1 g1 h1  a2 b2 c2 d2 e2 f2 g2 h2
+         */
         public string[] fillSeparatedParts(int start, int stop, ByteArraySegment payloadDataSegment)
         {
-
             string temp = "";
             List<string> tcpfile = new List<string>();
             int counter1 = 0;
@@ -383,6 +405,10 @@ namespace PacketSniffer
             return tcpfile.ToArray();
         }
 
+        /**
+         * Find hostname of given ip address,
+         * if FQDN not exists, it returns given ip address.
+         */
         public string findHostName(string src)
         {
             string hostname = "";
