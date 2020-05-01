@@ -149,7 +149,7 @@ namespace PacketSniffer
             Foo.device = Foo.checkIfDeviceExists(Foo.deviceName, devices);
             Foo.device.Open();
             Foo.device.Filter = Foo.createFilter();
-            Foo.device.OnPacketArrival += Foo.device_OnPacketArrival;
+            Foo.device.OnPacketArrival += Foo.gotPacket;
             Foo.device.Capture();
         }
 
@@ -191,7 +191,7 @@ namespace PacketSniffer
          * take info (about source and destination -> ports, address(which is converted to DN))
          * and at the end of function, there is print function for print sniffed packet
          */
-        void device_OnPacketArrival(object sender, CaptureEventArgs e)
+        void gotPacket(object sender, CaptureEventArgs e)
         {
             var time = e.Packet.Timeval.Date;
             var len = e.Packet.Data.Length;
